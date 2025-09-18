@@ -48,7 +48,7 @@ func NewAsciicast(width, height int, duration float64, command, title string, fr
 		}
 	}
 	return &Asciicast{
-		Version:   2,
+		Version:   1,
 		Width:     width,
 		Height:    height,
 		Duration:  Duration(duration),
@@ -175,4 +175,62 @@ func Load(url string) (*Asciicast, error) {
 	}
 
 	return asciicast, nil
+}
+
+func LoadV3(r io.Reader) (*Asciicast, error) {
+	dec := json.NewDecoder(r)
+	header := Header{}
+
+	if err := dec.Decode(&header); err != nil {
+		return nil, err
+	}
+
+	frames := []Frame{}
+
+	for dec.More() {
+		frame := Frame{}
+		if err := dec.Decode(&frame); err != nil {
+			return nil, err
+		}
+		frames = append(frames, frame)
+	}
+
+	asciicast := &Asciicast{
+		Version:   header.Version,
+		Width:     header.Width,
+		Height:    header.Height,
+		Timestamp: header.Timestamp,
+		Command:   header.Command,
+		Title:     header.Title,
+		Env:       header.Env,
+		Stdout:    frames,
+	}
+
+	return asciicast, nil
+}
+
+func OutputV3(cast Asciicast, w io.Writer) error {
+	enc := json.NewEncoder(w)
+
+	header := Header{
+		Version: 3,
+		Width:   cast.Width,
+		Height:  cast.Height,
+		Command: cast.Command,
+		Title:   cast.Title,
+		Env:     cast.Env,
+	}
+
+	if err := enc.Encode(header); err != nil {
+		return err
+	}
+
+	for _, frame := range cast.Stdout {
+		if err := enc.Encode(frame); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
 }
