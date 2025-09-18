@@ -40,7 +40,7 @@ func (r *AsciicastRecorder) Record(command, title string, maxWait float64, assum
 	util.Printf("Asciicast recording started.")
 	util.Printf(`Hit Ctrl-D or type "exit" to finish.`)
 
-	stdout := NewStream(OutputEvent, maxWait)
+	stdout := NewStream(maxWait)
 
 	err := r.Terminal.Record(command, stdout)
 	if err != nil {

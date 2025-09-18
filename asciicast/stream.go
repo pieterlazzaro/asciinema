@@ -1,40 +1,65 @@
 package asciicast
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
 
 type Stream struct {
 	Frames        []Frame
-	t             EventType
 	elapsedTime   time.Duration
 	lastWriteTime time.Time
 	maxWait       time.Duration
 	lock          *sync.Mutex
 }
 
-func NewStream(t EventType, maxWait float64) *Stream {
+type StreamWriter struct {
+	*Stream
+	t EventType
+}
+
+func (s *Stream) NewEventStreamWriter(t EventType) *StreamWriter {
+	return &StreamWriter{
+		Stream: s,
+		t:      t,
+	}
+}
+
+func (s *StreamWriter) Write(p []byte) (int, error) {
+	if s.Stream == nil {
+		return 0, errors.New("invalid stream")
+	}
+
+	return s.WriteFrame(s.t, p), nil
+}
+
+func NewStream(maxWait float64) *Stream {
 	if maxWait <= 0 {
 		maxWait = 1.0
 	}
 	return &Stream{
-		t:             t,
 		lastWriteTime: time.Now(),
 		maxWait:       time.Duration(maxWait*1000000) * time.Microsecond,
 		lock:          &sync.Mutex{},
 	}
 }
 
-func (s *Stream) Write(p []byte) (int, error) {
+func (s *Stream) WriteFrame(t EventType, p []byte) int {
 	frame := Frame{}
-	frame.EventType = s.t
+	frame.EventType = t
 	frame.Time = s.incrementElapsedTime().Seconds()
 	frame.EventData = make([]byte, len(p))
-	copy(frame.EventData, p)
+	n := copy(frame.EventData, p)
+
 	s.Frames = append(s.Frames, frame)
 
-	return len(p), nil
+	return n
+}
+
+func (s *Stream) Write(p []byte) (int, error) {
+
+	return s.WriteFrame(OutputEvent, p), nil
 }
 
 func (s *Stream) Close() {
