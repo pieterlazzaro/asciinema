@@ -40,7 +40,7 @@ func (s *Stream) Write(p []byte) (int, error) {
 func (s *Stream) Close() {
 	s.incrementElapsedTime()
 
-	if string(s.Frames[len(s.Frames)-1].EventData) == "exit\r\n" {
+	if len(s.Frames) > 0 && string(s.Frames[len(s.Frames)-1].EventData) == "exit\r\n" {
 		s.Frames = s.Frames[:len(s.Frames)-1]
 	}
 }
