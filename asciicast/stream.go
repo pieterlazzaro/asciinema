@@ -7,17 +7,19 @@ import (
 
 type Stream struct {
 	Frames        []Frame
+	t             EventType
 	elapsedTime   time.Duration
 	lastWriteTime time.Time
 	maxWait       time.Duration
 	lock          *sync.Mutex
 }
 
-func NewStream(maxWait float64) *Stream {
+func NewStream(t EventType, maxWait float64) *Stream {
 	if maxWait <= 0 {
 		maxWait = 1.0
 	}
 	return &Stream{
+		t:             t,
 		lastWriteTime: time.Now(),
 		maxWait:       time.Duration(maxWait*1000000) * time.Microsecond,
 		lock:          &sync.Mutex{},
@@ -26,7 +28,7 @@ func NewStream(maxWait float64) *Stream {
 
 func (s *Stream) Write(p []byte) (int, error) {
 	frame := Frame{}
-	frame.EventType = "o"
+	frame.EventType = s.t
 	frame.Time = s.incrementElapsedTime().Seconds()
 	frame.EventData = make([]byte, len(p))
 	copy(frame.EventData, p)
