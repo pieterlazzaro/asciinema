@@ -42,7 +42,7 @@ type Frame struct {
 
 func (f Frame) MarshalJSON() ([]byte, error) {
 	s, _ := json.Marshal(string(f.EventData))
-	json := fmt.Sprintf(`[%.6f, "o", %s]`, f.Time, s)
+	json := fmt.Sprintf(`[%.6f, "%s", %s]`, f.Time, f.EventType, s)
 	return []byte(json), nil
 }
 
